@@ -124,8 +124,8 @@
 
     <script>
         // 서버 주소를 자동으로 감지하거나 설정합니다.
-        // 현재는 로컬 테스트용이며, 배포 시 해당 서버의 URL로 수정이 필요합니다.
-        const API_URL = 'http://127.0.0.1:8000/leaderboard?limit=10';
+        // 현재는 Render 서버 주소를 사용하고 있습니다.
+        const API_URL = 'https://frogjump-leaderboard.onrender.com/leaderboard?limit=10';
 
         async function fetchLeaderboard() {
             const content = document.getElementById('leaderboard-content');
