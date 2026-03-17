@@ -1,40 +1,186 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <title>Frog Jump Leaderboard</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    h1 { margin-bottom: 10px; }
-    ol { padding-left: 20px; }
-    li { margin: 6px 0; }
-    .updated { color: #666; font-size: 12px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frog Jump Game - Leaderboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2E7D32;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--secondary-color);
+            margin: 0;
+            font-size: 2.5em;
+        }
+
+        p.subtitle {
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .leaderboard-table th, .leaderboard-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .leaderboard-table th {
+            background-color: #f8f9fa;
+            color: #555;
+            font-weight: 700;
+        }
+
+        .rank {
+            font-weight: bold;
+            width: 50px;
+            color: var(--primary-color);
+        }
+
+        .nickname {
+            font-weight: 500;
+        }
+
+        .score {
+            text-align: right;
+            color: var(--secondary-color);
+            font-weight: 700;
+        }
+
+        .top-1 { background-color: rgba(255, 215, 0, 0.1); }
+        .top-2 { background-color: rgba(192, 192, 192, 0.1); }
+        .top-3 { background-color: rgba(205, 127, 50, 0.1); }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
+        .error {
+            color: #d32f2f;
+            text-align: center;
+            padding: 20px;
+        }
+
+        footer {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #999;
+        }
+    </style>
 </head>
 <body>
-  <h1>🏆 Frog Jump Leaderboard</h1>
-  <p class="updated">자동 새로고침 (5초)</p>
-  <ol id="list"></ol>
+    <div class="container">
+        <header>
+            <h1>🐸 Frog Jump!</h1>
+            <p class="subtitle">실시간 랭킹 보드</p>
+        </header>
 
-  <script>
-    const API_BASE = "https://frogjump-leaderboard.onrender.com";
+        <div id="leaderboard-content">
+            <div class="loading">순위를 불러오는 중입니다...</div>
+        </div>
 
-    async function load() {
-      const res = await fetch(`${API_BASE}/leaderboard?limit=10`);
-      const data = await res.json();
+        <footer>
+            &copy; 2026 Frog Jump Game Project
+        </footer>
+    </div>
 
-      const ol = document.getElementById("list");
-      ol.innerHTML = "";
+    <script>
+        // 서버 주소를 자동으로 감지하거나 설정합니다.
+        // 현재는 로컬 테스트용이며, 배포 시 해당 서버의 URL로 수정이 필요합니다.
+        const API_URL = 'http://127.0.0.1:8000/leaderboard?limit=10';
 
-      data.forEach((r, i) => {
-        const li = document.createElement("li");
-        li.textContent = `${i + 1}. ${r.nickname} - ${r.score}`;
-        ol.appendChild(li);
-      });
-    }
+        async function fetchLeaderboard() {
+            const content = document.getElementById('leaderboard-content');
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('네트워크 응답에 문제가 있습니다.');
+                
+                const data = await response.json();
+                
+                if (data.length === 0) {
+                    content.innerHTML = '<div class="loading">아직 등록된 기록이 없습니다.</div>';
+                    return;
+                }
 
-    load();
-    setInterval(load, 5000);
-  </script>
+                let html = `
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>순위</th>
+                                <th>닉네임</th>
+                                <th style="text-align: right;">점수</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                data.forEach((item, index) => {
+                    const rank = index + 1;
+                    const rowClass = rank <= 3 ? `top-${rank}` : '';
+                    html += `
+                        <tr class="${rowClass}">
+                            <td class="rank">${rank}</td>
+                            <td class="nickname">${item.nickname}</td>
+                            <td class="score">${item.score.toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                content.innerHTML = html;
+
+            } catch (error) {
+                console.error('Error:', error);
+                content.innerHTML = `
+                    <div class="error">
+                        데이터를 불러오지 못했습니다.<br>
+                        서버가 실행 중인지 확인해 주세요.
+                    </div>
+                `;
+            }
+        }
+
+        // 초기 실행 및 30초마다 갱신
+        fetchLeaderboard();
+        setInterval(fetchLeaderboard, 30000);
+    </script>
 </body>
 </html>
